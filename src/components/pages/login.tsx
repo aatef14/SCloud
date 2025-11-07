@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Cloud, Loader2 } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 import { useAuth } from '../../lib/auth-context';
-import { authenticateUser, createUser } from '../../lib/dynamodb-service';
+import * as authService from '../../lib/auth-service-real';
 
 export function Login() {
   const navigate = useNavigate();
@@ -25,11 +25,15 @@ export function Login() {
     setIsSigningIn(true);
 
     try {
-      const user = await authenticateUser(signInEmail, signInPassword);
+      const response = await authService.loginUser({
+        email: signInEmail,
+        password: signInPassword,
+      });
       
-      if (user) {
-        login(user);
-        toast.success('Successfully signed in! (Demo Mode)');
+      if (response.user && response.token) {
+        login(response.user);
+        localStorage.setItem('auth-token', response.token);
+        toast.success('Successfully signed in!');
         navigate('/dashboard');
       } else {
         toast.error('Invalid email or password');
@@ -47,14 +51,16 @@ export function Login() {
     setIsSigningUp(true);
 
     try {
-      await createUser(signUpEmail, signUpPassword);
+      const response = await authService.registerUser({
+        email: signUpEmail,
+        username: signUpEmail.split('@')[0],
+        password: signUpPassword,
+      });
       
-      // Automatically sign in after successful signup
-      const user = await authenticateUser(signUpEmail, signUpPassword);
-      
-      if (user) {
-        login(user);
-        toast.success('Account created successfully! (Demo Mode)');
+      if (response.user && response.token) {
+        login(response.user);
+        localStorage.setItem('auth-token', response.token);
+        toast.success('Account created successfully!');
         navigate('/dashboard');
       }
     } catch (error: any) {

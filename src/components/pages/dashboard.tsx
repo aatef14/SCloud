@@ -15,8 +15,7 @@ import {
   DialogTrigger,
 } from '../ui/dialog';
 import { useAuth } from '../../lib/auth-context';
-import { uploadFileToS3 } from '../../lib/s3-service';
-import { saveFileMetadata } from '../../lib/dynamodb-service';
+import * as s3Service from '../../lib/s3-service-real';
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -36,30 +35,21 @@ export function Dashboard() {
       return;
     }
 
+    const token = localStorage.getItem('auth-token');
+    if (!token) {
+      toast.error('Please sign in again');
+      return;
+    }
+
     setIsUploading(true);
 
     try {
-      const fileId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
-      
-      // Upload to S3 (mock)
-      const s3Key = await uploadFileToS3({
+      await s3Service.uploadFileToS3({
         file: selectedFile,
-        userId: user.email,
-        fileId,
+        token,
       });
 
-      // Save metadata to DynamoDB (mock)
-      await saveFileMetadata({
-        userId: user.email,
-        fileId,
-        fileName: selectedFile.name,
-        fileSize: selectedFile.size,
-        fileType: selectedFile.type || selectedFile.name.split('.').pop() || 'unknown',
-        s3Key,
-        uploadDate: new Date().toISOString(),
-      });
-
-      toast.success(`File "${selectedFile.name}" uploaded successfully! (Demo Mode)`);
+      toast.success(`File "${selectedFile.name}" uploaded successfully!`);
       setIsUploadOpen(false);
       setSelectedFile(null);
       
@@ -76,9 +66,6 @@ export function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader />
-      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 text-center text-sm">
-        <strong>Demo Mode:</strong> Using mock AWS services. Files stored in browser memory only.
-      </div>
       
       <main className="container mx-auto px-4 py-8">
         <div className="mb-6 flex items-center justify-between">

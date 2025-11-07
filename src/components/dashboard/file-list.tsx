@@ -27,8 +27,7 @@ import {
   AlertDialogTitle,
 } from '../ui/alert-dialog';
 import { useAuth } from '../../lib/auth-context';
-import { getUserFiles, deleteFileMetadata, FileRecord } from '../../lib/dynamodb-service';
-import { getDownloadUrl, deleteFileFromS3, getShareableUrl } from '../../lib/s3-service';
+import * as s3Service from '../../lib/s3-service-real';
 
 interface FileItem {
   id: string;
@@ -68,11 +67,17 @@ export function FileList({ refreshTrigger }: FileListProps) {
       return;
     }
 
+    const token = localStorage.getItem('auth-token');
+    if (!token) {
+      toast.error('Please sign in again');
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const fileRecords = await getUserFiles(user.email);
+      const fileRecords = await s3Service.getUserFiles(token);
       
-      const formattedFiles: FileItem[] = fileRecords.map((record: FileRecord) => ({
+      const formattedFiles: FileItem[] = fileRecords.map((record) => ({
         id: record.fileId,
         name: record.fileName,
         size: formatFileSize(record.fileSize),
@@ -103,8 +108,14 @@ export function FileList({ refreshTrigger }: FileListProps) {
   };
 
   const handleDownload = async (file: FileItem) => {
+    const token = localStorage.getItem('auth-token');
+    if (!token) {
+      toast.error('Please sign in again');
+      return;
+    }
+
     try {
-      const url = await getDownloadUrl(file.s3Key);
+      const url = await s3Service.getDownloadUrl(file.id, token);
       window.open(url, '_blank');
       toast.success(`Downloading ${file.name}`);
     } catch (error) {
@@ -114,8 +125,14 @@ export function FileList({ refreshTrigger }: FileListProps) {
   };
 
   const handleShare = async (file: FileItem) => {
+    const token = localStorage.getItem('auth-token');
+    if (!token) {
+      toast.error('Please sign in again');
+      return;
+    }
+
     try {
-      const url = await getShareableUrl(file.s3Key);
+      const url = await s3Service.getShareableUrl(file.id, token);
       await navigator.clipboard.writeText(url);
       toast.success(`Share link copied for ${file.name}`);
     } catch (error) {
@@ -127,12 +144,14 @@ export function FileList({ refreshTrigger }: FileListProps) {
   const handleDelete = async () => {
     if (!fileToDelete || !user) return;
 
+    const token = localStorage.getItem('auth-token');
+    if (!token) {
+      toast.error('Please sign in again');
+      return;
+    }
+
     try {
-      // Delete from S3
-      await deleteFileFromS3(fileToDelete.s3Key);
-      
-      // Delete metadata from DynamoDB
-      await deleteFileMetadata(user.email, fileToDelete.id);
+      await s3Service.deleteFile(fileToDelete.id, token);
       
       // Update local state
       setFiles(files.filter(f => f.id !== fileToDelete.id));
