@@ -16,8 +16,8 @@ echo "🔐 Setting up SSL certificate for $DOMAIN..."
 
 # Install Certbot
 echo "📦 Installing Certbot..."
-sudo apt update
-sudo apt install -y certbot python3-certbot-nginx
+sudo dnf update -y
+sudo dnf install -y certbot python3-certbot-nginx
 
 # Get certificate
 echo "📜 Obtaining SSL certificate..."

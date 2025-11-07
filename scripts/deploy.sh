@@ -13,19 +13,21 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-APP_DIR="/home/ubuntu/scloud-app"
+# Use /root for root user, or /home/ec2-user for ec2-user on Amazon Linux 2023
+APP_DIR="/root/scloud-app"
 BACKEND_DIR="$APP_DIR/backend"
 FRONTEND_BUILD_DIR="$APP_DIR/build"
 
 echo -e "${YELLOW}Step 1: Updating system packages...${NC}"
-sudo apt update && sudo apt upgrade -y
+sudo dnf update -y
 
 echo -e "${YELLOW}Step 2: Installing Node.js 20.x...${NC}"
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
+# Amazon Linux 2023 - use dnf to install Node.js
+curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
+sudo dnf install -y nodejs
 
 echo -e "${YELLOW}Step 3: Installing additional tools...${NC}"
-sudo apt install -y git nginx
+sudo dnf install -y git nginx
 
 echo -e "${YELLOW}Step 4: Installing PM2 globally...${NC}"
 sudo npm install -g pm2
@@ -63,14 +65,14 @@ npm install
 npm run build
 
 echo -e "${YELLOW}Step 8: Configuring Nginx...${NC}"
-sudo bash -c 'cat > /etc/nginx/sites-available/scloud << EOF
+sudo bash -c 'cat > /etc/nginx/conf.d/scloud.conf << EOF
 server {
     listen 80;
     server_name _;
 
     # Frontend
     location / {
-        root /home/ubuntu/scloud-app/build;
+        root /root/scloud-app/build;
         index index.html;
         try_files \$uri \$uri/ /index.html;
     }
@@ -89,10 +91,6 @@ server {
     }
 }
 EOF'
-
-# Enable site
-sudo ln -sf /etc/nginx/sites-available/scloud /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
 
 # Test and restart Nginx
 sudo nginx -t

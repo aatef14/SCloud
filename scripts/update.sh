@@ -7,7 +7,7 @@ set -e
 
 echo "🔄 Updating SCloud application..."
 
-APP_DIR="/home/ubuntu/scloud-app"
+APP_DIR="/root/scloud-app"
 BACKEND_DIR="$APP_DIR/backend"
 
 # Pull latest changes

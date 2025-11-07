@@ -5,7 +5,7 @@
 
 set -e
 
-BACKUP_DIR="/home/ubuntu/backups"
+BACKUP_DIR="/root/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 mkdir -p "$BACKUP_DIR"
@@ -31,5 +31,5 @@ if command -v aws &> /dev/null; then
     echo "✅ Backup complete!"
     echo "Files saved to: $BACKUP_DIR"
 else
-    echo "⚠️  AWS CLI not installed. Install with: sudo apt install awscli"
+    echo "⚠️  AWS CLI not installed. Install with: sudo dnf install awscli"
 fi
